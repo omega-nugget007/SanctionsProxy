@@ -1,0 +1,63 @@
+<?php
+/**
+ * DCP - Proxy API Sanctions
+ * Ce fichier doit être sur ton serveur PHP (jamais accessible publiquement comme clé en dur côté JS)
+ * 
+ * ⚠️ REMPLACE LA VALEUR CI-DESSOUS PAR TA NOUVELLE CLÉ API ROBLOX OPEN CLOUD
+ */
+ 
+$ROBLOX_API_KEY  = "COLLE_TA_NOUVELLE_CLE_ICI";
+$UNIVERSE_ID     = "10036418650";
+$DATASTORE_NAME  = "StaffSanctions_v1";
+ 
+// Sécurité CORS — remplace par ton domaine exact
+header("Access-Control-Allow-Origin: *"); // ex: "https://monsite.com"
+header("Content-Type: application/json");
+ 
+// Récupère le userId passé en paramètre GET
+$userId = isset($_GET['userId']) ? preg_replace('/[^0-9]/', '', $_GET['userId']) : '';
+ 
+if (empty($userId)) {
+    http_response_code(400);
+    echo json_encode(["error" => "userId manquant"]);
+    exit;
+}
+ 
+$key      = "user_" . $userId;
+$url      = "https://apis.roblox.com/datastores/v1/universes/{$UNIVERSE_ID}/standard-datastores/datastore/entries/entry"
+          . "?datastoreName=" . urlencode($DATASTORE_NAME)
+          . "&entryKey=" . urlencode($key);
+ 
+$ch = curl_init($url);
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER     => [
+        "x-api-key: " . $ROBLOX_API_KEY,
+        "Accept: application/json"
+    ],
+    CURLOPT_TIMEOUT        => 10,
+]);
+ 
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+ 
+if ($httpCode === 404) {
+    echo json_encode(["sanctions" => [], "name" => ""]);
+    exit;
+}
+ 
+if ($httpCode !== 200) {
+    http_response_code(502);
+    echo json_encode(["error" => "Erreur Roblox API", "code" => $httpCode]);
+    exit;
+}
+ 
+$data = json_decode($response, true);
+ 
+// Retourne directement les données
+echo json_encode([
+    "name"      => $data["name"] ?? "",
+    "sanctions" => $data["sanctions"] ?? []
+]);
+ 
