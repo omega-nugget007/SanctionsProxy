@@ -31,6 +31,8 @@ app.get('/api/resolve', async (req, res) => {
     }
 });
 
+console.log('API KEY présente :', !!ROBLOX_API_KEY, '| Longueur :', (ROBLOX_API_KEY || '').length);
+
 // ── Route 2 : récupérer les sanctions DCP depuis le DataStore ─────────────────
 app.get('/api/sanctions', async (req, res) => {
     const userId = (req.query.userId || '').replace(/[^0-9]/g, '');
